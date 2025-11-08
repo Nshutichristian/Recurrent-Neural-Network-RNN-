@@ -3,7 +3,6 @@ services:
   - type: web
     name: rnn-backend
     runtime: python
-    plan: free
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120
     envVars:
@@ -15,7 +14,6 @@ services:
   - type: web
     name: rnn-frontend
     runtime: static
-    plan: free
     buildCommand: cd react-rnn-frontend && npm install && npm run build
     staticPublishPath: react-rnn-frontend/build
     routes:
