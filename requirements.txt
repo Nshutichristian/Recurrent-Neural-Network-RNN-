@@ -1,7 +1,9 @@
 # Web Interface Requirements for Render Deployment
-flask>=2.3.0,<4.0.0
-flask-cors>=4.0.0,<5.0.0
-gunicorn>=21.2.0,<24.0.0
-numpy>=1.24.0,<2.0.0
-tensorflow-cpu>=2.15.0
+# Pinned versions for Python 3.11.x compatibility
+flask==3.0.3
+flask-cors==4.0.1
+gunicorn==22.0.0
+numpy==1.26.4
+tensorflow-cpu==2.16.1
+h5py==3.11.0
 # Note: Using tensorflow-cpu for lighter deployment on Render free tier
