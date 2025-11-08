@@ -1,0 +1,5 @@
+# Minimal requirements - Flask app only (no TensorFlow)
+# Use this to deploy basic API first, then add TensorFlow later
+flask==3.0.3
+flask-cors==4.0.1
+gunicorn==22.0.0

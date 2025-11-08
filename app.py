@@ -6,12 +6,26 @@ Authors: Christian Nshuti Manzi & Aime Serge Tuyishime
 
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
-import numpy as np
 import pickle
 import os
 import time
 from datetime import datetime
 import threading
+
+# Try to import optional dependencies
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
+    print("⚠ NumPy not available - model training will not work")
+
+try:
+    import tensorflow as tf
+    TENSORFLOW_AVAILABLE = True
+except ImportError:
+    TENSORFLOW_AVAILABLE = False
+    print("⚠ TensorFlow not available - model training will not work")
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for React frontend
@@ -39,6 +53,10 @@ training_state = {
 def load_model_and_tokenizer():
     """Load the trained model and tokenizer"""
     global model, tokenizer, vocab_size
+
+    if not TENSORFLOW_AVAILABLE:
+        print("✗ TensorFlow not installed - cannot load model")
+        return False
 
     try:
         # Import TensorFlow
@@ -77,6 +95,9 @@ def generate_text(seed_text, num_words, temperature=1.0):
 
     if model is None or tokenizer is None:
         return "Error: Model not loaded"
+
+    if not TENSORFLOW_AVAILABLE or not NUMPY_AVAILABLE:
+        return "Error: TensorFlow/NumPy not installed"
 
     try:
         from tensorflow.keras.preprocessing.sequence import pad_sequences
@@ -217,7 +238,9 @@ def api_status():
         'sequence_length': SEQUENCE_LENGTH,
         'model_type': model_type,
         'embedding_type': embedding_type,
-        'embedding_dim': embedding_dim
+        'embedding_dim': embedding_dim,
+        'tensorflow_available': TENSORFLOW_AVAILABLE,
+        'numpy_available': NUMPY_AVAILABLE
     })
 
 @app.route('/api/health', methods=['GET'])
