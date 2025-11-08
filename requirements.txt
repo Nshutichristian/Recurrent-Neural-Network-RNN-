@@ -1,10 +1,8 @@
 # Web Interface Requirements for Render Deployment
-# Minimal version for free tier deployment
+# Full version with TensorFlow
 flask==3.0.3
 flask-cors==4.0.1
 gunicorn==22.0.0
-
-# Optional: Uncomment these after basic deployment works
-# numpy==1.26.4
-# tensorflow-cpu==2.16.1
-# h5py==3.11.0
+numpy==1.26.4
+h5py==3.11.0
+tensorflow-cpu==2.16.2

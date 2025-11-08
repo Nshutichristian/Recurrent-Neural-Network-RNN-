@@ -1,0 +1,11 @@
+# Full requirements with TensorFlow for Render deployment
+# Optimized for Python 3.11 and Render free tier
+
+flask==3.0.3
+flask-cors==4.0.1
+gunicorn==22.0.0
+numpy==1.26.4
+h5py==3.11.0
+
+# TensorFlow CPU-only (smaller, faster)
+tensorflow-cpu==2.16.2

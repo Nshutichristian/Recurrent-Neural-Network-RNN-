@@ -3,7 +3,7 @@ services:
   - type: web
     name: rnn-backend
     runtime: python
-    buildCommand: pip install --upgrade pip setuptools wheel && pip install --no-cache-dir -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install --no-cache-dir --use-pep517 -r requirements.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120
     healthCheckPath: /api/health
 
