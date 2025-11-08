@@ -1,0 +1,7 @@
+# Web Interface Requirements for Render Deployment
+flask>=2.3.0
+flask-cors>=4.0.0
+gunicorn>=21.2.0
+numpy>=1.21.0,<2.0.0
+tensorflow>=2.10.0,<2.16.0
+keras>=2.10.0

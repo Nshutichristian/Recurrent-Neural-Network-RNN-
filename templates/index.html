@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RNN Next-Word Prediction - Interactive Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #10b981;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .status-badge.loading {
+            background: #f59e0b;
+        }
+
+        .status-badge.error {
+            background: #ef4444;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="range"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+        }
+
+        .slider-value {
+            min-width: 80px;
+            text-align: center;
+            padding: 8px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .temperature-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .examples {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .example-chip {
+            padding: 8px 16px;
+            background: #f3f4f6;
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+
+        .example-chip:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .result-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+
+        .result-container.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .result-text {
+            font-size: 1.1em;
+            color: #333;
+            line-height: 1.6;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .seed-highlight {
+            background: #fef3c7;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .generated-highlight {
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading-spinner.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .info-card h3 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .info-card p {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            padding: 20px;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🤖 RNN Next-Word Prediction</h1>
+            <p>Interactive Text Generator using LSTM & GloVe Embeddings</p>
+            <div id="status-badge" class="status-badge loading">Loading Model...</div>
+        </div>
+
+        <!-- Main Generator Card -->
+        <div class="card">
+            <h2 style="color: #667eea; margin-bottom: 20px;">Generate Text</h2>
+
+            <!-- Seed Text Input -->
+            <div class="form-group">
+                <label for="seed-text">Starting Text (Seed):</label>
+                <input type="text" id="seed-text" placeholder="Type your starting text here..." value="to be or not to">
+
+                <div class="examples" id="examples">
+                    <!-- Examples will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Number of Words -->
+            <div class="form-group">
+                <label for="num-words">Number of Words to Generate:</label>
+                <input type="number" id="num-words" min="1" max="100" value="30">
+            </div>
+
+            <!-- Temperature Slider -->
+            <div class="form-group">
+                <label for="temperature">Temperature (Creativity):</label>
+                <div class="slider-container">
+                    <input type="range" id="temperature" min="0.1" max="2.0" step="0.1" value="1.0">
+                    <div class="slider-value" id="temp-value">1.0</div>
+                </div>
+                <div class="temperature-labels">
+                    <span>Conservative (0.5)</span>
+                    <span>Balanced (1.0)</span>
+                    <span>Creative (1.5+)</span>
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <button class="btn" id="generate-btn">Generate Text</button>
+
+            <!-- Loading Spinner -->
+            <div class="loading-spinner" id="loading">
+                <div class="spinner"></div>
+                <p style="margin-top: 10px; color: #667eea;">Generating...</p>
+            </div>
+
+            <!-- Error Message -->
+            <div class="error-message" id="error-message"></div>
+
+            <!-- Results -->
+            <div class="result-container" id="result-container">
+                <div class="result-label">Generated Text:</div>
+                <div class="result-text" id="result-text"></div>
+
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h3 id="info-words">-</h3>
+                        <p>Words Generated</p>
+                    </div>
+                    <div class="info-card">
+                        <h3 id="info-temp">-</h3>
+                        <p>Temperature</p>
+                    </div>
+                    <div class="info-card">
+                        <h3 id="info-time">-</h3>
+                        <p>Generation Time</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Info Card -->
+        <div class="card">
+            <h2 style="color: #667eea; margin-bottom: 20px;">Model Information</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3 id="model-vocab">-</h3>
+                    <p>Vocabulary Size</p>
+                </div>
+                <div class="info-card">
+                    <h3 id="model-seq">50</h3>
+                    <p>Sequence Length</p>
+                </div>
+                <div class="info-card">
+                    <h3>LSTM</h3>
+                    <p>Model Type</p>
+                </div>
+                <div class="info-card">
+                    <h3>GloVe 100D</h3>
+                    <p>Embeddings</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>CST 435 - Neural Networks and Deep Learning</p>
+            <p>RNN-Based Next Word Prediction System</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const seedTextInput = document.getElementById('seed-text');
+        const numWordsInput = document.getElementById('num-words');
+        const temperatureInput = document.getElementById('temperature');
+        const tempValueDisplay = document.getElementById('temp-value');
+        const generateBtn = document.getElementById('generate-btn');
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error-message');
+        const resultContainer = document.getElementById('result-container');
+        const resultText = document.getElementById('result-text');
+        const statusBadge = document.getElementById('status-badge');
+        const examplesDiv = document.getElementById('examples');
+
+        // Update temperature display
+        temperatureInput.addEventListener('input', (e) => {
+            tempValueDisplay.textContent = parseFloat(e.target.value).toFixed(1);
+        });
+
+        // Check model status
+        async function checkStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+
+                if (data.model_loaded && data.tokenizer_loaded) {
+                    statusBadge.textContent = '✓ Model Ready';
+                    statusBadge.className = 'status-badge';
+                    document.getElementById('model-vocab').textContent = data.vocab_size.toLocaleString();
+                    document.getElementById('model-seq').textContent = data.sequence_length;
+                    generateBtn.disabled = false;
+                } else {
+                    statusBadge.textContent = '✗ Model Not Loaded';
+                    statusBadge.className = 'status-badge error';
+                    generateBtn.disabled = true;
+                }
+            } catch (error) {
+                statusBadge.textContent = '✗ Server Error';
+                statusBadge.className = 'status-badge error';
+                generateBtn.disabled = true;
+            }
+        }
+
+        // Load example prompts
+        async function loadExamples() {
+            try {
+                const response = await fetch('/api/examples');
+                const data = await response.json();
+
+                examplesDiv.innerHTML = '<div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">Quick Examples:</div>';
+
+                data.examples.forEach(example => {
+                    const chip = document.createElement('div');
+                    chip.className = 'example-chip';
+                    chip.textContent = example;
+                    chip.onclick = () => {
+                        seedTextInput.value = example;
+                    };
+                    examplesDiv.appendChild(chip);
+                });
+            } catch (error) {
+                console.error('Error loading examples:', error);
+            }
+        }
+
+        // Generate text
+        async function generateText() {
+            const seedText = seedTextInput.value.trim();
+            const numWords = parseInt(numWordsInput.value);
+            const temperature = parseFloat(temperatureInput.value);
+
+            // Validation
+            if (!seedText) {
+                showError('Please enter some starting text');
+                return;
+            }
+
+            if (numWords < 1 || numWords > 100) {
+                showError('Number of words must be between 1 and 100');
+                return;
+            }
+
+            // Hide previous results and errors
+            resultContainer.classList.remove('show');
+            errorDiv.classList.remove('show');
+            loadingDiv.classList.add('show');
+            generateBtn.disabled = true;
+
+            const startTime = Date.now();
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        seed_text: seedText,
+                        num_words: numWords,
+                        temperature: temperature
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const endTime = Date.now();
+                    const generationTime = ((endTime - startTime) / 1000).toFixed(2);
+
+                    // Display results
+                    displayResult(data, generationTime);
+                } else {
+                    showError(data.error || 'Generation failed');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                loadingDiv.classList.remove('show');
+                generateBtn.disabled = false;
+            }
+        }
+
+        // Display result
+        function displayResult(data, generationTime) {
+            const seedText = data.seed_text;
+            const generatedText = data.generated_text;
+
+            // Highlight seed text
+            const seedWords = seedText.split(' ');
+            const allWords = generatedText.split(' ');
+            const generatedWords = allWords.slice(seedWords.length);
+
+            const highlightedText = `
+                <span class="seed-highlight">${seedWords.join(' ')}</span>
+                <span class="generated-highlight"> ${generatedWords.join(' ')}</span>
+            `;
+
+            resultText.innerHTML = highlightedText;
+
+            // Update info cards
+            document.getElementById('info-words').textContent = data.num_words;
+            document.getElementById('info-temp').textContent = data.temperature.toFixed(1);
+            document.getElementById('info-time').textContent = generationTime + 's';
+
+            // Show result container
+            resultContainer.classList.add('show');
+        }
+
+        // Show error message
+        function showError(message) {
+            errorDiv.textContent = '⚠️ ' + message;
+            errorDiv.classList.add('show');
+        }
+
+        // Event Listeners
+        generateBtn.addEventListener('click', generateText);
+
+        // Allow Enter key to generate
+        seedTextInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                generateText();
+            }
+        });
+
+        // Initialize
+        checkStatus();
+        loadExamples();
+    </script>
+</body>
+</html>
